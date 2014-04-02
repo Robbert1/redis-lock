@@ -1,4 +1,4 @@
-redis-lock
+redis-lock (redis 2.6.12+ fork with better algoritm)
 ==========
 
 Implements a locking primitive using redis in node.js.
