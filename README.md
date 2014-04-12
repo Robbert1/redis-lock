@@ -6,10 +6,12 @@ Implements a locking primitive using redis in node.js.
 This forked version makes use of the new features of redis to create locks using the new SET and EVAL commands.
 Providing more reliable lock expiration and removal logic.
 
-In order to use this forked version install it using:
-npm install redis-lock@http://github.com/Robbert1/redis-lock/tarball/master --save
+In order to use this forked version install it using
 
-The original code can be found here:
+	$ npm install redis-lock@http://github.com/Robbert1/redis-lock/tarball/master --save
+
+The original code can be found here
+
 https://github.com/errorception/redis-lock
 
 Original API documentation and licence (both still apply)
