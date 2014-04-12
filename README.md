@@ -14,8 +14,7 @@ The original code can be found here
 
 https://github.com/errorception/redis-lock
 
-Original API documentation and licence (both still apply)
-==========
+### Original API documentation and licence (both still apply)
 
 Useful for concurrency control. For example, when updating a database record you might want to ensure that no other part of your code is updating the same record at that time.
 
