@@ -1,13 +1,21 @@
-redis-lock (redis 2.6.12+ fork with better algoritm)
+redis-lock (redis 2.6.12+ fork of redis-lock)
 ==========
 
 Implements a locking primitive using redis in node.js.
 
-Fully non-blocking and asynchronous, and uses the robust algorithm described in the [redis docs](http://redis.io/commands/setnx).
+This forked version makes use of the new features of redis to create locks using the new SET and EVAL commands.
+Providing more reliable lock expiration and removal logic.
+
+In order to use this forked version install it using:
+npm install redis-lock@http://github.com/Robbert1/redis-lock/tarball/master --save
+
+The original code can be found here:
+https://github.com/errorception/redis-lock
+
+Original API documentation and licence (both still apply)
+==========
 
 Useful for concurrency control. For example, when updating a database record you might want to ensure that no other part of your code is updating the same record at that time.
-
-Used heavily at [errorception](http://errorception.com/).
 
 ## Example
 
@@ -43,8 +51,7 @@ lock("myLock", function(done) {
 
 ## Installation
 
-	$ npm install redis-lock
-
+	$ npm install redis-lock@http://github.com/Robbert1/redis-lock/tarball/master --save
 
 ## Usage
 

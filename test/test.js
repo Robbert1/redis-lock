@@ -5,14 +5,13 @@ var should = require("should"),
 describe("redis-lock", function() {
 	it("should aquire a lock and call the callback", function(done) {
 		lock("testLock", function(completed) {
-			redisClient.get("lock.testLock", function(err, timeStamp) {
+			redisClient.get("lock:testLock", function(err, token) {
 				if(err) throw err;
-
-				parseFloat(timeStamp).should.be.above(Date.now());
+        should.exist(token);
 
 				completed(function() {
-					redisClient.get("lock.testLock", function(err, lockValue) {
-						should.not.exist(lockValue);
+					redisClient.get("lock:testLock", function(err, token) {
+						should.not.exist(token);
 						done();
 					});
 				});
@@ -56,7 +55,7 @@ describe("redis-lock", function() {
 
 		lock("testLock", function(completed) {
 			// This should be called after 300 ms
-			(new Date() - start).should.be.above(300);
+			(new Date() - start).should.be.above(300).and.below(320);
 			completed();
 			done();
 		});

@@ -1,57 +1,32 @@
 "use strict";
 
-function acquireLock(client, lockName, timeout, retryDelay, onLockAquired) {
+var Scripto = require('redis-scripto');
+
+
+var acquireLock = function (client, lockName, timeout, retryDelay, onLockAquired) {
 	function retry() {
 		setTimeout(function() {
 			acquireLock(client, lockName, timeout, retryDelay, onLockAquired);
 		}, retryDelay);
 	}
 
-	var lockTimeoutValue = (Date.now() + timeout + 1);
+  var token = Math.random().toString(36).substr(2);
+  client.set(lockName, token, 'NX', 'PX', timeout, function(err, result){
+    if(err) return retry();
 
-	client.setnx(lockName, lockTimeoutValue, function(err, result) {
-		if(err) return retry();
-
-		if(result === 0) {
-			// Lock couldn't be aquired. Check if the existing lock has timed out.
-
-			client.get(lockName, function(err, existingLockTimestamp) {
-				if(err) return retry();
-				if(!existingLockTimestamp) {
-					// Wait, the lock doesn't exist!
-					// Someone must have called .del after we called .setnx but before .get.
-					// https://github.com/errorception/redis-lock/pull/4
-					return retry();
-				}
-
-				existingLockTimestamp = parseFloat(existingLockTimestamp);
-
-				if(existingLockTimestamp > Date.now()) {
-					// Lock looks valid so far. Wait some more time.
-					return retry();
-				}
-
-				lockTimeoutValue = (Date.now() + timeout + 1)
-				client.getset(lockName, lockTimeoutValue, function(err, result) {
-					if(err) return retry();
-
-					if(result == existingLockTimestamp) {
-						onLockAquired(lockTimeoutValue);
-					} else {
-						retry();
-					}
-				});
-			});
-		} else {
-			onLockAquired(lockTimeoutValue);
-		}
-	});
-}
+    if (result !== null) {
+      onLockAquired(token);
+    } else {
+      retry();
+    }
+  });
+};
 
 module.exports = function(client, retryDelay) {
 	if(!(client && client.setnx)) {
 		throw new Error("You must specify a client instance of http://github.com/mranney/node_redis");
 	}
+  var scriptManager;
 
 	retryDelay = retryDelay || 50;
 
@@ -65,17 +40,20 @@ module.exports = function(client, retryDelay) {
 			timeout = 5000;
 		}
 
-		lockName = "lock." + lockName;
+		lockName = "lock:" + lockName;
 
-		acquireLock(client, lockName, timeout, retryDelay, function(lockTimeoutValue) {
+		acquireLock(client, lockName, timeout, retryDelay, function(token) {
 			taskToPerform(function(done) {
-				done = done || function() {};
-				
-				if(lockTimeoutValue > Date.now()) {
-					client.del(lockName, done);
-				} else {
-					done();
-				}
+        if(!scriptManager) {
+          scriptManager = new Scripto(client);
+          scriptManager.loadFromDir('scripts');
+        }
+        scriptManager.run('unlock', [lockName], [token], function(err, result) {
+          if(!result)
+            console.warn('failed to unlock as tokens did not match');
+          if(done)
+            done();
+        });
 			});
 		});
 	}
